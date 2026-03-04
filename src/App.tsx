@@ -291,10 +291,17 @@ function CameraView({ onCapture, onBack }: { onCapture: (img: string) => void, o
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isReady, setIsReady] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function setupCamera() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setError("Your browser doesn't support camera access.");
+        return;
+      }
+
       try {
+        // Try back camera first
         const stream = await navigator.mediaDevices.getUserMedia({ 
           video: { facingMode: 'environment' } 
         });
@@ -303,9 +310,18 @@ function CameraView({ onCapture, onBack }: { onCapture: (img: string) => void, o
           setIsReady(true);
         }
       } catch (err) {
-        console.error('Camera access denied', err);
-        alert('Camera access is required to use this feature.');
-        onBack();
+        console.warn('Back camera failed, trying any camera...', err);
+        try {
+          // Fallback to any camera
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+            setIsReady(true);
+          }
+        } catch (err2: any) {
+          console.error('All camera access failed', err2);
+          setError(err2.message || "Camera access denied. Please check your permissions.");
+        }
       }
     }
     setupCamera();
@@ -333,6 +349,10 @@ function CameraView({ onCapture, onBack }: { onCapture: (img: string) => void, o
     }
   };
 
+  const openInNewTab = () => {
+    window.open(window.location.href, '_blank');
+  };
+
   return (
     <motion.div 
       initial={{ opacity: 0 }}
@@ -349,40 +369,66 @@ function CameraView({ onCapture, onBack }: { onCapture: (img: string) => void, o
       </div>
 
       <div className="flex-1 relative overflow-hidden flex items-center justify-center">
-        <video 
-          ref={videoRef} 
-          autoPlay 
-          playsInline 
-          className="w-full h-full object-cover"
-        />
-        
-        {/* Scanning Frame */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="w-64 h-32 border-2 border-white/50 rounded-2xl relative">
-            <div className="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-blue-500 rounded-tl-lg" />
-            <div className="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-blue-500 rounded-tr-lg" />
-            <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-blue-500 rounded-bl-lg" />
-            <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-blue-500 rounded-br-lg" />
-            
-            {/* Scanning Line */}
-            <motion.div 
-              animate={{ top: ['0%', '100%', '0%'] }}
-              transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
-              className="absolute left-0 right-0 h-0.5 bg-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.8)]"
-            />
+        {error ? (
+          <div className="p-8 text-center text-white space-y-4">
+            <div className="w-16 h-16 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <X size={32} />
+            </div>
+            <h3 className="text-xl font-bold">Camera Error</h3>
+            <p className="text-slate-400 max-w-xs mx-auto">{error}</p>
+            <div className="flex flex-col gap-3 pt-4">
+              <button 
+                onClick={openInNewTab}
+                className="bg-blue-600 text-white py-3 px-6 rounded-xl font-bold hover:bg-blue-700 transition-colors"
+              >
+                Open in New Tab
+              </button>
+              <button 
+                onClick={onBack}
+                className="text-slate-400 hover:text-white transition-colors"
+              >
+                Go Back
+              </button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <>
+            <video 
+              ref={videoRef} 
+              autoPlay 
+              playsInline 
+              className="w-full h-full object-cover"
+            />
+            
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="w-64 h-32 border-2 border-white/50 rounded-2xl relative">
+                <div className="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-blue-500 rounded-tl-lg" />
+                <div className="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-blue-500 rounded-tr-lg" />
+                <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-blue-500 rounded-bl-lg" />
+                <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-blue-500 rounded-br-lg" />
+                
+                <motion.div 
+                  animate={{ top: ['0%', '100%', '0%'] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
+                  className="absolute left-0 right-0 h-0.5 bg-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.8)]"
+                />
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
-      <div className="p-8 bg-black flex items-center justify-center">
-        <button 
-          onClick={capture}
-          disabled={!isReady}
-          className="w-20 h-20 rounded-full border-4 border-white flex items-center justify-center p-1 active:scale-90 transition-transform disabled:opacity-50"
-        >
-          <div className="w-full h-full bg-white rounded-full" />
-        </button>
-      </div>
+      {!error && (
+        <div className="p-8 bg-black flex items-center justify-center">
+          <button 
+            onClick={capture}
+            disabled={!isReady}
+            className="w-20 h-20 rounded-full border-4 border-white flex items-center justify-center p-1 active:scale-90 transition-transform disabled:opacity-50"
+          >
+            <div className="w-full h-full bg-white rounded-full" />
+          </button>
+        </div>
+      )}
 
       <canvas ref={canvasRef} className="hidden" />
     </motion.div>
