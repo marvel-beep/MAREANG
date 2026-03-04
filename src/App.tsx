@@ -378,6 +378,19 @@ function CameraView({ onCapture, onBack }: { onCapture: (img: string) => void, o
             <p className="text-slate-400 max-w-xs mx-auto">{error}</p>
             <div className="flex flex-col gap-3 pt-4">
               <button 
+                onClick={() => {
+                  setError(null);
+                  setIsReady(false);
+                  // The useEffect will re-run if we trigger a state change or if we just manually call the setup function
+                  // Actually, since it's in a useEffect with [], we might need to trigger a re-mount or a refresh.
+                  // Let's just reload the component by toggling a key or similar.
+                  window.location.reload(); 
+                }}
+                className="bg-white text-black py-3 px-6 rounded-xl font-bold hover:bg-slate-200 transition-colors"
+              >
+                Try Again
+              </button>
+              <button 
                 onClick={openInNewTab}
                 className="bg-blue-600 text-white py-3 px-6 rounded-xl font-bold hover:bg-blue-700 transition-colors"
               >
