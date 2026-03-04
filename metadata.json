@@ -1,0 +1,5 @@
+{
+  "name": "CALLCAM",
+  "description": "Camera Calculator - Solve math problems by taking a photo. Get step-by-step solutions for algebra, calculus, matrices, and more.",
+  "requestFramePermissions": ["camera"]
+}
