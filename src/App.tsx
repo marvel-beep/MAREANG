@@ -250,12 +250,12 @@ export default function App() {
                     {currentResult.category}
                   </span>
                   <h3 className="text-sm text-slate-500 mb-1">Problem</h3>
-                  <p className="text-xl font-mono leading-relaxed">{currentResult.expression}</p>
+                  <p className="text-xl font-mono leading-relaxed">{currentResult?.expression || 'No expression found'}</p>
                 </div>
 
                 <div className="p-4 bg-blue-600 rounded-2xl text-white mb-8">
                   <h3 className="text-xs text-blue-200 mb-1 uppercase tracking-widest font-bold">Final Result</h3>
-                  <p className="text-3xl font-bold">{currentResult.result}</p>
+                  <p className="text-3xl font-bold">{currentResult?.result || 'No result'}</p>
                 </div>
 
                 <div>
